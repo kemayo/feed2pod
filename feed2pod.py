@@ -66,9 +66,9 @@ def feed2pod(url):
         etree.SubElement(image, 'title').text = feed.feed.image.title or feed.feed.title
         etree.SubElement(image, 'link').text = feed.feed.image.link or feed.feed.link
         if 'width' in feed.feed.image:
-            etree.SubElement(image, 'width').text = feed.feed.image.width
+            etree.SubElement(image, 'width').text = str(feed.feed.image.width)
         if 'height' in feed.feed.image:
-            etree.SubElement(image, 'height').text = feed.feed.image.height
+            etree.SubElement(image, 'height').text = str(feed.feed.image.height)
 
     # TODO: there's a bunch of podcast-y attributes, mostly `itunes:` stuff,
     # which we should translate in if possible, or override somehow if they're
