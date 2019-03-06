@@ -4,6 +4,15 @@ import argparse
 import feedparser
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as etree
+import urllib
+
+
+def absolute_url_from_entry(entry, url):
+    if 'link' in entry:
+        return urllib.parse.urljoin(entry.link, url)
+    if 'id' in entry and 'guidislink' in entry and entry.guidislink:
+        return urllib.parse.urljoin(entry.id, url)
+    return url
 
 
 def file_from_entry(entry):
@@ -62,7 +71,7 @@ def feed2pod(url):
         etree.SubElement(channel, 'generator').text = 'feed2pod'
     if 'image' in feed.feed:
         image = etree.SubElement(channel, 'image')
-        etree.SubElement(image, 'href').text = feed.feed.image.link
+        etree.SubElement(image, 'url').text = feed.feed.image.link
         etree.SubElement(image, 'title').text = feed.feed.image.title or feed.feed.title
         etree.SubElement(image, 'link').text = feed.feed.image.link or feed.feed.link
         if 'width' in feed.feed.image:
@@ -88,11 +97,11 @@ def feed2pod(url):
             item = etree.SubElement(channel, 'item')
             etree.SubElement(item, 'title').text = entry.title
             if 'id' in entry:
-                # Note to self: isPermalink mostly means "is the GUID also a link"
+                # Note to self: isPermaLink mostly means "is the GUID also a link"
                 if entry.id == entry.link:
-                    etree.SubElement(item, 'guid', isPermalink='true').text = entry.id
+                    etree.SubElement(item, 'guid', isPermaLink='true').text = entry.id
                 else:
-                    etree.SubElement(item, 'guid', isPermalink='false').text = entry.id
+                    etree.SubElement(item, 'guid', isPermaLink='false').text = entry.id
             if 'author' in entry and '@' in entry.author:
                 etree.SubElement(item, 'author').text = entry.author
             if 'link' in entry:
@@ -104,7 +113,7 @@ def feed2pod(url):
             elif 'summary' in entry:
                 etree.SubElement(item, 'description').text = entry.summary
             # TODO: length; we should see if a HEAD can at least fill it in
-            etree.SubElement(item, 'enclosure', url=file, type=ftype, length=flength or "0")
+            etree.SubElement(item, 'enclosure', url=absolute_url_from_entry(entry, file), type=ftype, length=flength or "0")
 
     # TODO: should we support paging / history? it'd need more arguments
     # passed in, or some sort of persistent entry-storage by feed URL.
@@ -123,7 +132,7 @@ if __name__ == '__main__':
 
     rss = feed2pod(args.url)
     if args.filename:
-        with open(args.filename, 'wb') as f:
+        with open(args.filename, 'w') as f:
             f.write(rss)
     else:
         print(rss)
